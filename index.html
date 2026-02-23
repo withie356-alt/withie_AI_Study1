@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 도구 활용 교육</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+        :root {
+            --primary: #0078D4;
+            --primary-dark: #005A9E;
+            --primary-light: #E8F4FD;
+            --accent: #F5A623;
+            --accent-light: #FFF3E0;
+            --success: #28A745;
+            --success-light: #E8F5E9;
+            --danger: #DC3545;
+            --danger-light: #FFEBEE;
+            --miso: #6C5CE7;
+            --miso-light: #F0EDFF;
+            --agent: #00B894;
+            --agent-light: #E0F7F1;
+            --claude: #D97706;
+            --claude-light: #FFFBEB;
+            --gemini: #4285F4;
+            --gemini-light: #E8F0FE;
+            --dark: #1E1E1E;
+            --g900: #212529;
+            --g700: #495057;
+            --g500: #8B95A1;
+            --g300: #DEE2E6;
+            --g100: #F8F9FA;
+            --white: #FFFFFF;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #0d1117;
+            color: var(--g900);
+            overflow: hidden;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* ========== Slide Container ========== */
+        .slides-wrapper {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            opacity: 0;
+            transform: translateX(60px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            overflow-y: auto;
+        }
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+        .slide.prev {
+            opacity: 0;
+            transform: translateX(-60px);
+        }
+
+        .slide-inner {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* ========== Slide Backgrounds ========== */
+        .bg-white { background: var(--white); }
+        .bg-gray { background: var(--g100); }
+        .bg-dark { background: var(--dark); color: #E0E0E0; }
+        .bg-primary { background: linear-gradient(135deg, #0078D4 0%, #005A9E 100%); color: white; }
+        .bg-claude { background: linear-gradient(135deg, #D97706 0%, #92400E 100%); color: white; }
+        .bg-miso { background: linear-gradient(135deg, #6C5CE7 0%, #4834D4 100%); color: white; }
+        .bg-agent { background: linear-gradient(135deg, #00B894 0%, #00997B 100%); color: white; }
+        .bg-hero {
+            background: linear-gradient(135deg, #0078D4 0%, #005A9E 40%, #6C5CE7 100%);
+            color: white;
+            overflow: hidden;
+        }
+        .bg-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+        .bg-danger { background: linear-gradient(135deg, #DC3545, #B91C28); color: white; }
+        .bg-success { background: linear-gradient(135deg, #28A745, #1E7E34); color: white; }
+        .bg-practice { background: linear-gradient(135deg, #1E1E2E, #2D2D44); color: #E0E0E0; }
+
+        /* ========== Typography ========== */
+        .slide-badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .bg-hero .slide-badge,
+        .bg-primary .slide-badge,
+        .bg-claude .slide-badge,
+        .bg-miso .slide-badge,
+        .bg-agent .slide-badge,
+        .bg-danger .slide-badge,
+        .bg-success .slide-badge { background: rgba(255,255,255,0.2); }
+        .bg-white .slide-badge, .bg-gray .slide-badge { background: var(--primary-light); color: var(--primary); }
+
+        h1 { font-size: 52px; font-weight: 900; line-height: 1.25; margin-bottom: 16px; }
+        h2 { font-size: 40px; font-weight: 900; line-height: 1.3; margin-bottom: 16px; }
+        h3 { font-size: 26px; font-weight: 700; margin-bottom: 12px; }
+        h4 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { font-size: 20px; opacity: 0.85; line-height: 1.6; margin-bottom: 32px; }
+
+        /* ========== Grid ========== */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+        /* ========== Cards ========== */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--g300);
+        }
+        .card.dark {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        .card h4 { display: flex; align-items: center; gap: 10px; }
+
+        /* ========== Tool Cards ========== */
+        .tool-card {
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .tool-header {
+            padding: 20px 24px;
+            color: white;
+        }
+        .tool-header.vscode { background: linear-gradient(135deg, #0078D4, #005A9E); }
+        .tool-header.claude { background: linear-gradient(135deg, #D97706, #B45309); }
+        .tool-header.gemini { background: linear-gradient(135deg, #4285F4, #1A73E8); }
+        .tool-header.v0-h { background: linear-gradient(135deg, #059669, #047857); }
+        .tool-header.miso-h { background: linear-gradient(135deg, #6C5CE7, #5A4BD1); }
+        .tool-header h4 { color: white; margin-bottom: 2px; font-size: 20px; }
+        .tool-header p { font-size: 13px; opacity: 0.9; }
+        .tool-body {
+            background: white;
+            padding: 20px 24px;
+        }
+        .tool-body li {
+            padding: 6px 0;
+            font-size: 15px;
+            color: var(--g700);
+            list-style: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .check { color: var(--success); font-weight: bold; flex-shrink: 0; }
+
+        /* ========== Code Block ========== */
+        .code {
+            background: #1E1E2E;
+            color: #CDD6F4;
+            border-radius: var(--radius-sm);
+            padding: 24px 28px;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 15px;
+            line-height: 1.9;
+            position: relative;
+            overflow-x: auto;
+        }
+        .code-label {
+            position: absolute;
+            top: 10px; right: 14px;
+            background: rgba(255,255,255,0.08);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #8B95A1;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 6px; right: 6px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #8B95A1;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        .c { color: #6A9955; }       /* comment */
+        .k { color: #569CD6; }       /* keyword */
+        .s { color: #CE9178; }       /* string */
+        .f { color: #DCDCAA; }       /* function */
+        .p { color: #F5A623; }       /* prompt */
+        .n { color: #4EC9B0; }       /* number/type */
+
+        /* ========== Step Flow ========== */
+        .steps {
+            display: flex;
+            gap: 0;
+            align-items: stretch;
+        }
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 24px 16px;
+            position: relative;
+            background: var(--white);
+            border: 2px solid var(--g300);
+            border-radius: var(--radius);
+        }
+        .step::after { display: none; }
+        .step-n {
+            width: 36px; height: 36px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+        .step-n.miso-n { background: var(--miso); }
+        .step-n.agent-n { background: var(--agent); }
+        .step h4 { color: var(--g900); }
+        .step p { font-size: 13px; color: var(--g500); margin-top: 4px; }
+
+        /* ========== Table ========== */
+        .tbl {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .tbl th {
+            background: var(--primary);
+            color: white;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            text-align: left;
+        }
+        .tbl td {
+            padding: 12px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--g300);
+            background: white;
+        }
+        .tbl tr:last-child td { border-bottom: none; }
+
+        /* ========== Callout ========== */
+        .callout {
+            padding: 20px 24px;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid;
+            margin: 12px 0;
+        }
+        .callout.info { background: var(--primary-light); border-color: var(--primary); }
+        .callout.warn { background: var(--accent-light); border-color: var(--accent); }
+        .callout.err { background: var(--danger-light); border-color: var(--danger); }
+        .callout.ok { background: var(--success-light); border-color: var(--success); }
+        .callout.miso-c { background: var(--miso-light); border-color: var(--miso); }
+        .callout.agent-c { background: var(--agent-light); border-color: var(--agent); }
+        .callout-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .callout p, .callout li { font-size: 14px; }
+
+        /* ========== Badge ========== */
+        .badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge.b { background: var(--primary-light); color: var(--primary); }
+        .badge.g { background: var(--success-light); color: var(--success); }
+        .badge.o { background: var(--accent-light); color: var(--accent); }
+        .badge.pu { background: var(--miso-light); color: var(--miso); }
+        .badge.r { background: var(--danger-light); color: var(--danger); }
+
+        /* ========== Flow Diagram ========== */
+        .flow { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+        .flow-box {
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 15px;
+            border: 2px solid;
+            text-align: center;
+        }
+        .flow-box.vs { background: var(--primary-light); border-color: var(--primary); color: var(--primary-dark); }
+        .flow-box.ai { background: var(--claude-light); border-color: var(--claude); color: var(--claude); }
+        .flow-box.mi { background: var(--miso-light); border-color: var(--miso); color: var(--miso); }
+        .flow-box.out { background: var(--success-light); border-color: var(--success); color: var(--success); }
+        .flow-box.ag { background: var(--agent-light); border-color: var(--agent); color: var(--agent); }
+        .flow-arr { font-size: 28px; color: var(--g500); font-weight: 900; }
+        .flow-arr.down { display: block; text-align: center; font-size: 24px; }
+
+        /* ========== Navigation Controls ========== */
+        .controls {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px);
+            padding: 10px 24px;
+            border-radius: 40px;
+            z-index: 1000;
+        }
+        .controls button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .controls button:hover { background: rgba(255,255,255,0.15); }
+        .controls button:disabled { opacity: 0.3; cursor: default; }
+        .controls .page-info {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        /* ========== Progress Bar ========== */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: var(--primary);
+            transition: width 0.4s ease;
+            z-index: 1001;
+        }
+
+        /* ========== TOC Overlay ========== */
+        .toc-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .toc-overlay.show { display: flex; }
+        .toc-panel {
+            background: white;
+            border-radius: var(--radius);
+            padding: 36px 40px;
+            max-width: 860px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .toc-panel h3 { font-size: 22px; margin-bottom: 20px; color: var(--g900); }
+        .toc-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            color: var(--g700);
+            font-size: 15px;
+        }
+        .toc-item:hover { background: var(--g100); }
+        .toc-item .toc-num {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        /* ========== Timeline ========== */
+        .timeline { position: relative; padding-left: 28px; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px; top: 0; bottom: 0;
+            width: 2px;
+            background: rgba(255,255,255,0.2);
+        }
+        .bg-white .timeline::before,
+        .bg-gray .timeline::before { background: var(--g300); }
+        .tl-item { position: relative; margin-bottom: 20px; }
+        .tl-item::before {
+            content: '';
+            position: absolute;
+            left: -24px; top: 5px;
+            width: 10px; height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        .tl-item h4 { font-size: 15px; margin-bottom: 2px; }
+        .tl-item p { font-size: 13px; opacity: 0.7; }
+
+        /* ========== Practice specific ========== */
+        .practice-step {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-bottom: 12px;
+        }
+        .practice-step h4 {
+            color: #A5D8FF;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .practice-step p, .practice-step li {
+            font-size: 14px;
+            color: #CDD6F4;
+        }
+        .practice-step ol, .practice-step ul {
+            padding-left: 20px;
+        }
+        .practice-step li { margin-bottom: 4px; }
+
+        /* ========== Comparison in dark ========== */
+        .dark-tbl { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .dark-tbl th {
+            background: rgba(255,255,255,0.1);
+            padding: 12px 18px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .dark-tbl td {
+            padding: 10px 18px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* ========== Highlight list ========== */
+        .hl-list { list-style: none; padding: 0; }
+        .hl-list li {
+            padding: 10px 0;
+            font-size: 17px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .hl-list li:last-child { border: none; }
+        .bg-white .hl-list li,
+        .bg-gray .hl-list li { border-bottom-color: var(--g300); color: var(--g700); }
+
+        /* ========== Presenter Mode ========== */
+        body.presenter-mode {
+            background: #16171d;
+        }
+        body.presenter-mode .slides-wrapper {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            transform: scale(var(--ps, 0.55));
+            transform-origin: top left;
+            border-radius: 8px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.15);
+        }
+        body.presenter-mode .controls {
+            bottom: 12px;
+        }
+
+        .presenter-panel {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            bottom: 60px;
+            width: 24vw;
+            background: #1e1f2b;
+            border-radius: 12px;
+            color: #e0e0e0;
+            overflow: hidden;
+            flex-direction: column;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 500;
+        }
+        body.presenter-mode .presenter-panel {
+            display: flex;
+        }
+        .pp-header {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-weight: 700;
+            font-size: 13px;
+            color: #8B95A1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .pp-timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            color: #A5D8FF;
+            text-align: center;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .pp-timer button {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #A5D8FF;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .pp-timer button:hover { background: rgba(255,255,255,0.2); }
+        .pp-notes {
+            flex: 1;
+            padding: 14px 16px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #CDD6F4;
+            white-space: pre-wrap;
+        }
+        .pp-notes:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -2px;
+            background: rgba(255,255,255,0.04);
+        }
+        .pp-footer {
+            flex-shrink: 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .pp-next {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.03);
+            font-size: 13px;
+            color: #6B7280;
+        }
+        .pp-next span { color: #A5D8FF; font-weight: 600; }
+        .pp-note-actions {
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .pp-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #CDD6F4;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .pp-btn:hover { background: rgba(255,255,255,0.2); }
+        .pp-btn-save { background: rgba(0,120,212,0.3); border-color: rgba(0,120,212,0.4); }
+        .pp-btn-save:hover { background: rgba(0,120,212,0.5); }
+        /* Fullscreen overrides (for standalone fullscreen without presenter) */
+        :fullscreen .presenter-panel,
+        :-webkit-full-screen .presenter-panel { display: none !important; }
+        :fullscreen .slides-wrapper,
+        :-webkit-full-screen .slides-wrapper {
+            transform: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+        :fullscreen .controls,
+        :-webkit-full-screen .controls {
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+        }
+        /* ========== Print - A4 Landscape ========== */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+            body {
+                overflow: visible !important;
+                height: auto !important;
+                width: auto !important;
+                background: white !important;
+                color: #212529 !important;
+            }
+            .slides-wrapper {
+                position: static !important;
+                width: auto !important;
+                height: auto !important;
+                overflow: visible !important;
+                transform: none !important;
+            }
+            .slide {
+                position: static !important;
+                opacity: 1 !important;
+                transform: none !important;
+                pointer-events: auto !important;
+                width: 100% !important;
+                height: 180mm !important;
+                overflow: hidden !important;
+                page-break-after: always;
+                page-break-inside: avoid;
+                break-after: page;
+                display: flex !important;
+                align-items: center !important;
+                padding: 24px 36px !important;
+                background: white !important;
+                color: #212529 !important;
+            }
+            .slide:last-child { page-break-after: auto; break-after: auto; }
+            .slide-inner {
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow: hidden !important;
+            }
+            /* 모든 배경색 제거 */
+            .bg-hero, .bg-primary, .bg-miso, .bg-agent, .bg-danger, .bg-success, .bg-practice, .bg-claude,
+            .bg-gray, .bg-white {
+                background: white !important;
+                color: #212529 !important;
+            }
+            .bg-hero *, .bg-primary *, .bg-miso *, .bg-agent *, .bg-danger *, .bg-success *, .bg-practice *, .bg-claude * {
+                color: #212529 !important;
+            }
+            .bg-hero h1, .bg-hero h2, .bg-primary h1, .bg-primary h2,
+            .bg-miso h1, .bg-miso h2, .bg-danger h1, .bg-danger h2,
+            .bg-practice h1, .bg-practice h2 {
+                color: #1E1E1E !important;
+            }
+            .slide-badge {
+                background: #E8F4FD !important;
+                color: #0078D4 !important;
+            }
+            /* 배경 그라디언트/pseudo-element 제거 */
+            .slide::before { display: none !important; }
+            /* 폰트 살짝 축소 */
+            h1 { font-size: 32px !important; }
+            h2 { font-size: 24px !important; }
+            h3 { font-size: 18px !important; }
+            h4 { font-size: 14px !important; }
+            p, li, td, th { font-size: 12px !important; line-height: 1.5 !important; }
+            .subtitle { font-size: 13px !important; }
+            /* 그리드 간격 약간 축소 */
+            .grid-2 { gap: 16px !important; }
+            .grid-3 { gap: 14px !important; }
+            .grid-4 { gap: 10px !important; }
+            /* 코드 블록 */
+            .code {
+                background: #F8F9FA !important;
+                color: #212529 !important;
+                border: 1px solid #DEE2E6 !important;
+                padding: 10px 14px !important;
+                font-size: 11px !important;
+            }
+            .code * { color: #212529 !important; }
+            .copy-btn { display: none !important; }
+            /* practice-step 박스 */
+            .practice-step {
+                background: #F8F9FA !important;
+                color: #212529 !important;
+                border: 1px solid #DEE2E6 !important;
+                padding: 12px 16px !important;
+            }
+            .practice-step * { color: #212529 !important; }
+            .practice-step h4 { color: #1E1E1E !important; font-size: 13px !important; }
+            .practice-step p, .practice-step li { font-size: 11px !important; }
+            /* 카드/callout 박스 */
+            .card, .feature-card, .callout, .comparison-card {
+                background: #F8F9FA !important;
+                color: #212529 !important;
+                border: 1px solid #DEE2E6 !important;
+            }
+            .callout p, .callout li { font-size: 12px !important; }
+            /* 테이블 */
+            .tbl th { padding: 10px 16px !important; font-size: 12px !important; background: #495057 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .tbl td { padding: 10px 16px !important; font-size: 12px !important; }
+            /* steps */
+            .step p { font-size: 11px !important; }
+            /* 카드 dark */
+            .card.dark { background: #F8F9FA !important; color: #212529 !important; border: 1px solid #DEE2E6 !important; }
+            .card.dark * { color: #212529 !important; }
+            /* 도구 카드 */
+            .tool-card { font-size: 11px !important; }
+            .tool-header { padding: 12px 16px !important; }
+            .tool-body { padding: 10px 16px !important; }
+            .tool-body li { font-size: 11px !important; }
+            /* 링크 색상 유지 */
+            a { color: #0078D4 !important; }
+            /* UI 요소 숨김 */
+            .controls, .progress-bar, .toc-overlay, .presenter-panel {
+                display: none !important;
+            }
+            /* 내용 많은 슬라이드 — 전체를 축소해서 한 페이지에 맞춤 */
+            .slide[data-index="16"] .slide-inner {
+                transform: scale(0.88) !important;
+                transform-origin: top center !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="slides-wrapper" id="slidesWrapper">
+
+    <!-- ===== SLIDE 0: Title ===== -->
+    <div class="slide bg-hero active" data-index="0">
+        <img src="logo/52g_logo.svg" alt="" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); height:420px; opacity:0.07; z-index:0; pointer-events:none;">
+        <div class="slide-inner" style="text-align:center; position:relative; z-index:1;">
+            <div class="slide-badge"><img src="logo/52g_logo.svg" alt="52g" style="height:24px; vertical-align:-6px; margin-right:8px;">와 함께하는 즐거운 회사생활</div>
+            <h1>AI 도구 활용 공유회</h1>
+            <img src="logo/cha.gif.gif" alt="캐릭터" style="height:160px; margin-top:24px;">
+            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-top:40px;">
+                <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); padding:12px 24px; border-radius:var(--radius); font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px;">
+                    v0
+                </div>
+                <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); padding:12px 24px; border-radius:var(--radius); font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px;">
+                    MISO
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 1: 교육 목차 ===== -->
+    <div class="slide bg-white" data-index="1">
+        <div class="slide-inner">
+            <div class="slide-badge">Overview</div>
+            <h2>오늘 교육 순서</h2>
+            <div class="grid-2" style="margin-top:28px;">
+                <div>
+                    <div style="display:flex; align-items:baseline; gap:16px; padding:16px 0; border-bottom:1px solid var(--g300);">
+                        <span style="font-size:28px; font-weight:900; color:var(--primary); flex-shrink:0; width:28px; text-align:right;">1</span>
+                        <div><h4 style="margin:0;">AI 도구, 어떤 것들이 있나</h4><p style="font-size:13px;color:var(--g500);margin:4px 0 0;">v0, AI 코딩 도구, MISO</p></div>
+                    </div>
+                    <div style="display:flex; align-items:baseline; gap:16px; padding:16px 0; border-bottom:1px solid var(--g300);">
+                        <span style="font-size:28px; font-weight:900; color:var(--primary); flex-shrink:0; width:28px; text-align:right;">2</span>
+                        <div><h4 style="margin:0;">이런 것들을 만들 수 있다</h4><p style="font-size:13px;color:var(--g500);margin:4px 0 0;">PRD 작성, 프롬프트 수정법</p></div>
+                    </div>
+                    <div style="display:flex; align-items:baseline; gap:16px; padding:16px 0;">
+                        <span style="font-size:28px; font-weight:900; color:var(--primary); flex-shrink:0; width:28px; text-align:right;">3</span>
+                        <div><h4 style="margin:0;">앱에 AI 연결 & MISO</h4><p style="font-size:13px;color:var(--g500);margin:4px 0 0;">AI 연결, 자동화 흐름 만들기</p></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex; align-items:baseline; gap:16px; padding:16px 0; border-bottom:1px solid var(--g300);">
+                        <span style="font-size:28px; font-weight:900; color:var(--g700); flex-shrink:0; width:28px; text-align:right;">4</span>
+                        <div><h4 style="margin:0;">만든 앱, 어디에 올리나</h4><p style="font-size:13px;color:var(--g500);margin:4px 0 0;">GitHub 배포, Supabase 저장</p></div>
+                    </div>
+                    <div style="display:flex; align-items:baseline; gap:16px; padding:16px 0; border-bottom:1px solid var(--g300);">
+                        <span style="font-size:28px; font-weight:900; color:var(--g700); flex-shrink:0; width:28px; text-align:right;">5</span>
+                        <div><h4 style="margin:0;">보안, 이것만 기억하세요</h4><p style="font-size:13px;color:var(--g500);margin:4px 0 0;">데이터 보안, 도구별 안전성</p></div>
+                    </div>
+                    <div style="display:flex; align-items:baseline; gap:16px; padding:16px 0;">
+                        <span style="font-size:28px; font-weight:900; color:var(--g700); flex-shrink:0; width:28px; text-align:right;">6</span>
+                        <div><h4 style="margin:0;">실습 — 게임 만들기</h4><p style="font-size:13px;color:var(--g500);margin:4px 0 0;">환경 설치 → 게임 → Supabase → 배포 → MISO</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 2: 전체 관계도 ===== -->
+    <!-- ===== SLIDE 2: 도구 소개 ===== -->
+    <div class="slide bg-white" data-index="2">
+        <div class="slide-inner">
+            <div class="slide-badge">Tools</div>
+            <h2>도구 소개</h2>
+            <div class="grid-3" style="margin-top:20px; max-width:1400px;">
+                <div class="tool-card">
+                    <div class="tool-header v0-h">
+                        <h4>v0</h4>
+                        <p>말로 설명하면 앱을 만들어주는 AI</p>
+                    </div>
+                    <div class="tool-body" style="font-size:12px;">
+                        <li><span class="check">&#10003;</span> 말로 설명하면 웹 화면 자동 생성</li>
+                        <li><span class="check">&#10003;</span> 데이터 저장·외부 서비스 연결 가능</li>
+                        <li><span class="check">&#10003;</span> 결과물 바로 배포 가능</li>
+                        <li style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--g300); font-size:11px; color:var(--g500);">Vercel 제공 &middot; 무료/유료</li>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-header claude">
+                        <h4>AI 코딩 도구</h4>
+                        <p>더 깊은 수정이 필요할 때</p>
+                    </div>
+                    <div class="tool-body" style="font-size:12px;">
+                        <li><span class="check">&#10003;</span> 로컬 파일 직접 수정, 대용량 파일도 접근</li>
+                        <li><span class="check">&#10003;</span> 필요한 프로그램 설치부터 실행까지 자동</li>
+                        <li><span class="check">&#10003;</span> 스스로 테스트를 거쳐 결과를 도출</li>
+                        <li style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--g300); font-size:11px; color:var(--g500);">Claude Code, Cursor, Gemini 등</li>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-header miso-h">
+                        <h4>MISO</h4>
+                        <p>앱에 AI 자동화를 연결할 때</p>
+                    </div>
+                    <div class="tool-body" style="font-size:12px;">
+                        <li><span class="check">&#10003;</span> AI가 반복 업무를 24시간 처리</li>
+                        <li><span class="check">&#10003;</span> 코딩 없이 드래그&amp;드롭 설계</li>
+                        <li><span class="check">&#10003;</span> 사내 서버 처리, 기밀 데이터 안전</li>
+                        <li style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--g300); font-size:11px; color:var(--g500);">GS 자체 플랫폼 &middot; 사내 환경</li>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 3: 활용 범위 ===== -->
+    <div class="slide bg-white" data-index="3">
+        <div class="slide-inner">
+            <div class="slide-badge">What You Can Build</div>
+            <h2>이런 것들을 만들 수 있다</h2>
+            <p class="subtitle" style="color:var(--g700);">AI와 함께라면 아이디어만 있으면 됩니다</p>
+            <div class="grid-3" style="margin-top:16px;">
+                <div class="card" style="padding:20px; border-left:4px solid var(--primary);">
+                    <h4>&#128202; 현황 대시보드</h4>
+                    <p style="font-size:14px; color:var(--g500); margin-top:6px;">매출, 재고, KPI를 한눈에 보는 실시간 현황판</p>
+                </div>
+                <div class="card" style="padding:20px; border-left:4px solid var(--primary);">
+                    <h4>&#128270; 현장 점검 앱</h4>
+                    <p style="font-size:14px; color:var(--g500); margin-top:6px;">체크리스트 입력 → 사진 첨부 → 결과 자동 리포트</p>
+                </div>
+                <div class="card" style="padding:20px; border-left:4px solid var(--primary);">
+                    <h4>&#128197; 예약 / 신청 시스템</h4>
+                    <p style="font-size:14px; color:var(--g500); margin-top:6px;">회의실, 차량, 교육 등 신청·승인을 웹으로 관리</p>
+                </div>
+                <div class="card" style="padding:20px; border-left:4px solid var(--primary);">
+                    <h4>&#127918; 게임 / 인터랙티브 콘텐츠</h4>
+                    <p style="font-size:14px; color:var(--g500); margin-top:6px;">퀴즈, 미니게임, 교육용 시뮬레이션</p>
+                </div>
+                <div class="card" style="padding:20px; border-left:4px solid var(--primary);">
+                    <h4>&#129302; AI 챗봇 / 상담 도우미</h4>
+                    <p style="font-size:14px; color:var(--g500); margin-top:6px;">사내 규정 검색, 고객 문의 자동 응대</p>
+                </div>
+                <div class="card" style="padding:20px; border-left:4px solid var(--primary);">
+                    <h4>&#128161; 떠오른 아이디어, 뭐든!</h4>
+                    <p style="font-size:14px; color:var(--g500); margin-top:6px;">"이거 있으면 좋겠는데" 싶은 건 일단 만들어보세요</p>
+                </div>
+            </div>
+            <div class="callout info" style="margin-top:20px;">
+                <div class="callout-title">&#128161; 핵심 메시지</div>
+                <p>코딩을 몰라도 됩니다. <strong>"무엇을 만들고 싶은지"</strong>만 명확하면, <strong>"어떻게"</strong>는 AI가 해결합니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 4: 어떻게 만드나? ===== -->
+    <div class="slide bg-white" data-index="4">
+        <div class="slide-inner">
+            <div class="slide-badge">How It Works</div>
+            <h2>그러면, 어떻게 만드나?</h2>
+            <p class="subtitle" style="color:var(--g700);">AI에게 말로 설명하면 직접 만들어줍니다. 단, <strong>처음 요청이 중요합니다.</strong></p>
+            <div class="grid-2" style="margin-top:24px;">
+                <!-- 왼쪽: PRD 방식 요청 -->
+                <div class="card" style="border-top:4px solid var(--primary);">
+                    <h4 style="color:var(--primary);">&#128203; 처음 설계가 핵심!</h4>
+                    <p style="font-size:13px; color:var(--g500); margin:4px 0 16px;">중간에 바꾸면 처음부터 다시 만드는 것과 같습니다</p>
+                    <div style="display:flex; gap:14px;">
+                        <div style="flex:1; background:var(--g100); border-radius:10px; padding:14px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--g500); margin-bottom:6px;">&#10060; 나쁜 요청</div>
+                            <div style="font-size:13px; color:var(--g500); line-height:1.7;">
+                                "출퇴근앱 만들어줘"<br>
+                                &rarr; "여기 바꿔"<br>
+                                &rarr; "저것도 추가"<br>
+                                &rarr; 결국 처음부터 다시
+                            </div>
+                        </div>
+                        <div style="flex:1; background:var(--primary-light); border-radius:10px; padding:14px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:6px;">&#9989; PRD 방식 요청</div>
+                            <div style="font-size:13px; color:var(--g900); line-height:1.7;">
+                                <strong>1.</strong> 목적: 출퇴근 기록 웹앱<br>
+                                <strong>2.</strong> 기능: 출퇴근 버튼, 월별 조회<br>
+                                <strong>3.</strong> 화면: 메인, 기록 목록<br>
+                                <strong>4.</strong> 저장: 브라우저 로컬
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 오른쪽: v0 예시 -->
+                <div class="card" style="border-top:4px solid #059669;">
+                    <h4 style="color:#059669;">&#127912; 예시: v0에서 첫 요청</h4>
+                    <p style="font-size:13px; color:var(--g500); margin:4px 0 16px;">말로 설명하면 화면과 코드를 한 번에 만들어줍니다</p>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="background:var(--g100); border-radius:10px; padding:10px; text-align:center; flex:1;">
+                            <div style="font-size:18px;">&#128172;</div>
+                            <div style="font-size:11px; color:var(--g700); margin-top:4px;">PRD 작성</div>
+                        </div>
+                        <div style="color:var(--g300);">&#10132;</div>
+                        <div style="background:var(--g100); border-radius:10px; padding:10px; text-align:center; flex:1;">
+                            <div style="font-size:18px;">&#127912;</div>
+                            <div style="font-size:11px; color:var(--g700); margin-top:4px;">v0에 붙여넣기</div>
+                        </div>
+                        <div style="color:var(--g300);">&#10132;</div>
+                        <div style="background:var(--g100); border-radius:10px; padding:10px; text-align:center; flex:1;">
+                            <div style="font-size:18px;">&#128187;</div>
+                            <div style="font-size:11px; color:var(--g700); margin-top:4px;">화면+코드 생성</div>
+                        </div>
+                        <div style="color:var(--g300);">&#10132;</div>
+                        <div style="background:var(--g100); border-radius:10px; padding:10px; text-align:center; flex:1;">
+                            <div style="font-size:18px;">&#10004;&#65039;</div>
+                            <div style="font-size:11px; font-weight:700; color:#059669; margin-top:4px;">배포!</div>
+                        </div>
+                    </div>
+                    <p style="margin-top:10px; font-size:11px; color:var(--g500); text-align:left; padding-left:8px;">v0 주소 : <a href="https://v0.app" target="_blank" style="color:#059669; text-decoration:underline;">https://v0.app</a></p>
+                </div>
+            </div>
+            <p style="margin-top:14px; font-size:12px; color:var(--g500); text-align:left; padding-left:10px;">PRD = 제품 요구사항 문서 — 무엇을, 왜, 어떻게 만들지 미리 정리한 문서 (이것도 AI에게 작성을 맡길 수 있습니다)</p>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 6: 프롬프트 작성법 ===== -->
+    <div class="slide bg-white" data-index="5">
+        <div class="slide-inner">
+            <div class="slide-badge">Prompt Tips</div>
+            <h2>만든 다음에는, 이렇게 수정합니다</h2>
+            <p class="subtitle" style="color:var(--g700);">처음 만든 결과물을 다듬을 때도 <strong>구체적으로 말할수록</strong> 결과가 좋습니다.</p>
+            <table class="tbl" style="margin-top:20px;">
+                <tr>
+                    <th style="width:50%;">&#10060; 나쁜 수정 요청</th>
+                    <th style="width:50%;">&#9989; 좋은 수정 요청</th>
+                </tr>
+                <tr>
+                    <td>"좀 바꿔줘"</td>
+                    <td>"헤더 배경을 파란색으로, 글씨는 흰색으로 바꿔줘"</td>
+                </tr>
+                <tr>
+                    <td>"에러 고쳐줘"</td>
+                    <td>"버튼 누르면 화면이 안 바뀌어. 콘솔에 에러 메시지 복사해줄게"</td>
+                </tr>
+                <tr>
+                    <td>"더 예쁘게"</td>
+                    <td>"카드에 그림자 넣고, 카드 사이 간격 좀 넓혀줘"</td>
+                </tr>
+            </table>
+            <div class="callout ok" style="margin-top:24px;">
+                <div class="callout-title">&#127919; 한 번에 다 바꾸지 말고, 단계별로 요청하세요</div>
+                <ol style="padding-left:20px; margin-top:8px;">
+                    <li><strong>확인:</strong> "지금 결과물 괜찮아. 여기서 수정할게"</li>
+                    <li><strong>하나씩:</strong> "테이블에 날짜 컬럼 추가해줘"</li>
+                    <li><strong>확인 후 다음:</strong> "좋아! 이번엔 차트도 넣어줘"</li>
+                    <li><strong>마무리:</strong> "모바일에서도 잘 보이게 정리해줘"</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 7: VS Code에 AI 코딩 도구 설치 ===== -->
+    <div class="slide bg-white" data-index="6">
+        <div class="slide-inner">
+            <div class="slide-badge">Setup</div>
+            <h2>더 복잡한 기능이 필요할 때 <span style="font-size:14px; font-weight:400; color:var(--g500);">— 이건 다음 시간에..</span></h2>
+            <p class="subtitle" style="color:var(--g700);">VS Code에 AI 코딩 도구를 설치하면, 복잡한 기능도 AI와 함께 만들 수 있습니다.</p>
+            <div class="steps" style="margin-top:28px; gap:16px;">
+                <div class="step">
+                    <div class="step-n">1</div>
+                    <h4>v0 결과물 다운로드</h4>
+                    <p>v0에서 만든 코드를 내 PC에 저장</p>
+                </div>
+                <div class="step">
+                    <div class="step-n">2</div>
+                    <h4>VS Code에서 열기</h4>
+                    <p>파일 → 폴더 열기로 프로젝트 열기</p>
+                </div>
+                <div class="step">
+                    <div class="step-n">3</div>
+                    <h4>AI 코딩 도구 설치</h4>
+                    <p>확장 프로그램(Ctrl+Shift+X)에서 검색</p>
+                </div>
+                <div class="step">
+                    <div class="step-n">4</div>
+                    <h4>AI와 함께 수정</h4>
+                    <p>말로 지시하면 코드를 직접 수정</p>
+                </div>
+            </div>
+            <div style="display:flex; gap:16px; margin-top:24px;">
+                <div class="callout ok" style="flex:1;">
+                    <div class="callout-title">이런 것까지 가능</div>
+                    <p>내 PC의 파일을 직접 읽고, 수정하고, 실행</p>
+                    <p>스스로 계획을 세우고 시행착오를 거쳐 완성</p>
+                    <p>필요한 프로그램 설치부터 실행까지 자동 처리</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 8: 만든 앱에 AI 연결 ===== -->
+    <div class="slide bg-gray" data-index="7">
+        <div class="slide-inner">
+            <div class="slide-badge">Next Step</div>
+            <h2>한 단계 더 &mdash; 만든 앱에 AI를 연결</h2>
+            <p class="subtitle" style="color:var(--g700);">앱만으로도 충분히 유용하지만, 여기에 AI를 연결하면 한 단계 더 나아갑니다.</p>
+            <table class="tbl" style="margin-top:24px;">
+                <tr>
+                    <th style="width:22%;">만든 앱</th>
+                    <th style="width:38%;">AI 없이도 이만큼은 됩니다</th>
+                    <th style="width:40%;">여기에 AI를 연결하면?</th>
+                </tr>
+                <tr>
+                    <td><strong>&#128202; 현황 대시보드</strong></td>
+                    <td style="color:var(--g500);">수동으로 데이터 입력하고, 차트로 표시</td>
+                    <td>AI가 데이터 분석하여 <strong>이상 탐지·추세 예측까지 자동</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>&#128270; 현장 점검 앱</strong></td>
+                    <td style="color:var(--g500);">체크리스트 입력하고, 사진 첨부해서 제출</td>
+                    <td>AI가 사진 분석하고 <strong>불량·위험 자동 판별·리포트 생성</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>&#128197; 예약 / 신청 시스템</strong></td>
+                    <td style="color:var(--g500);">신청서 올리고, 관리자가 수동 승인</td>
+                    <td>AI가 일정·조건 분석해서 <strong>자동 배정·승인 판단</strong></td>
+                </tr>
+            </table>
+            <div style="background:var(--primary-light); border-radius:var(--radius-sm); padding:16px 24px; margin-top:20px; text-align:center;">
+                <span style="font-size:14px; color:var(--primary-dark); font-weight:600;">앱에 데이터를 넣으면 &rarr; AI가 읽고 판단 &rarr; <strong>결과까지 자동으로</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 9: MISO 연결 방법 ===== -->
+    <div class="slide bg-miso" data-index="8">
+        <div class="slide-inner">
+            <div class="slide-badge">MISO</div>
+            <h2>AI 자동화 흐름 만들기</h2>
+            <p class="subtitle">MISO의 <strong>플레이메이커</strong> 기능으로, AI 동작 흐름을 설명하면 AI가 만들어줍니다.</p>
+            <div class="steps" style="margin-top:32px;">
+                <div class="step" style="background:rgba(255,255,255,0.95);">
+                    <div class="step-n miso-n">1</div>
+                    <h4>대화로 설명</h4>
+                    <p>원하는 흐름을 말로 설명하면<br>AI가 질문하며 함께 완성합니다</p>
+                </div>
+                <div class="step" style="background:rgba(255,255,255,0.95);">
+                    <div class="step-n miso-n">2</div>
+                    <h4>플레이메이커가 생성</h4>
+                    <p>AI가 자동화 흐름을<br>만들어줍니다</p>
+                </div>
+                <div class="step" style="background:rgba(255,255,255,0.95);">
+                    <div class="step-n miso-n">3</div>
+                    <h4>저장 → 발행</h4>
+                    <p>"저장하기" 클릭 후<br>"발행하기" 클릭</p>
+                </div>
+                <div class="step" style="background:rgba(255,255,255,0.95);">
+                    <div class="step-n miso-n">4</div>
+                    <h4>API 키 생성</h4>
+                    <p>"앱 공유하기"<br>→ "다른 서비스와 연결"<br>→ API 키 생성<br>→ <strong>키와 URL 복사</strong></p>
+                </div>
+                <div class="step" style="background:rgba(255,255,255,0.95);">
+                    <div class="step-n miso-n">5</div>
+                    <h4>내 앱에 연결</h4>
+                    <p>API 키와 URL을 앱에 넣으면 끝<br>연결은 AI에게 맡기면 됩니다</p>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.15); border-radius:var(--radius-sm); padding:14px 24px; margin-top:24px; text-align:center;">
+                <span style="font-size:14px;">AI와 대화하며 흐름 설계 &rarr; 플레이메이커가 흐름 자동 생성 &rarr; API 키만 앱에 넣으면 연결 완료</span>
+            </div>
+            <p style="margin-top:14px; font-size:12px; color:rgba(255,255,255,0.5); text-align:center;">
+                <strong style="color:rgba(255,255,255,0.7);">API란?</strong> &mdash; 서로 다른 프로그램끼리 데이터를 주고받는 통로. 내 앱에서 MISO에 데이터를 보내면, AI 결과를 돌려줍니다.
+            </p>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE: 배포와 데이터 저장 ===== -->
+    <div class="slide bg-white" data-index="9">
+        <div class="slide-inner">
+            <div class="slide-badge">Deploy &amp; Data</div>
+            <h2>코드와 데이터, 어디에 저장하나?</h2>
+            <p class="subtitle" style="color:var(--g700);">v0로 만든 앱은 이 세 곳에서 동작합니다</p>
+            <table class="tbl" style="margin-top:28px;">
+                <tr>
+                    <th></th>
+                    <th style="background:#24292e; color:white;">GitHub</th>
+                    <th style="background:#3ECF8E; color:white;">Supabase</th>
+                    <th style="background:#000; color:white;">Vercel</th>
+                </tr>
+                <tr>
+                    <td><strong>역할</strong></td>
+                    <td>코드 저장소</td>
+                    <td>데이터 저장소</td>
+                    <td>배포 서비스</td>
+                </tr>
+                <tr>
+                    <td><strong>뭘 담나?</strong></td>
+                    <td>앱의 소스 코드<br><span style="font-size:11px; color:var(--g500);">화면, 기능, 디자인</span></td>
+                    <td>앱이 쓰는 데이터<br><span style="font-size:11px; color:var(--g500);">사용자 정보, 점수, 기록</span></td>
+                    <td>완성된 앱을 웹에 공개<br><span style="font-size:11px; color:var(--g500);">URL 생성, 접속 가능</span></td>
+                </tr>
+            </table>
+            <div style="background:var(--primary-light); border-radius:var(--radius-sm); padding:14px 24px; margin-top:16px; font-size:13px; color:var(--primary-dark);">
+                v0에서 앱을 만들면 이 세 가지가 자동으로 연결됩니다. 제작 과정에서 질의응답에 따라 입력해주면 됩니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 10: 보안 가이드 ===== -->
+    <div class="slide bg-danger" data-index="10">
+        <div class="slide-inner">
+            <div class="slide-badge">Security</div>
+            <h2>AI 사용 시 이것만 기억하세요</h2>
+            <p class="subtitle">AI 도구 사용 시 반드시 지켜야 할 사항</p>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
+                <div style="display:flex; align-items:center; gap:16px; background:white; border-radius:var(--radius-sm); padding:16px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.1);">
+                    <span style="font-size:22px; flex-shrink:0;">&#10060;</span>
+                    <div>
+                        <strong style="color:var(--g900); font-size:14px;">프롬프트에 실제 사내 데이터를 붙여넣지 마세요</strong>
+                        <p style="font-size:12px; color:var(--g500); margin:4px 0 0;">"이 고객 목록으로 앱 만들어줘" 하면서 실제 데이터를 넣으면 외부 서버로 전송됩니다</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; background:white; border-radius:var(--radius-sm); padding:16px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.1);">
+                    <span style="font-size:22px; flex-shrink:0;">&#10060;</span>
+                    <div>
+                        <strong style="color:var(--g900); font-size:14px;">비밀번호·API Key를 프롬프트에 직접 입력 금지</strong>
+                        <p style="font-size:12px; color:var(--g500); margin:4px 0 0;">v0 설정 화면의 환경변수(Environment Variables)에 별도 등록하세요</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; background:white; border-radius:var(--radius-sm); padding:16px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.1);">
+                    <span style="font-size:22px; flex-shrink:0;">&#10060;</span>
+                    <div>
+                        <strong style="color:var(--g900); font-size:14px;">Supabase에 사내 기밀·개인정보 저장 금지</strong>
+                        <p style="font-size:12px; color:var(--g500); margin:4px 0 0;">Supabase는 외부 클라우드 — 사내 기밀 데이터는 MISO에서 처리하세요</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; background:white; border-left:4px solid var(--success); border-radius:var(--radius-sm); padding:16px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.1);">
+                    <span style="font-size:22px; flex-shrink:0;">&#10003;&#65039;</span>
+                    <div>
+                        <strong style="color:var(--success); font-size:14px;">프롬프트에는 기능 설명만 입력하세요</strong>
+                        <p style="font-size:12px; color:var(--g500); margin:4px 0 0;">"점수 기록 기능 추가해줘" 처럼 만들고 싶은 기능만 설명하면 됩니다</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 11: 보안 - 데이터 위치 ===== -->
+    <div class="slide bg-white" data-index="11">
+        <div class="slide-inner">
+            <div class="slide-badge">Data Security</div>
+            <h2>사내 데이터를 다룰 때, 어떤 도구가 안전할까?</h2>
+            <p class="subtitle" style="color:var(--g700);">소속 회사의 보안 정책에 따라 도구를 선택하고, 데이터를 안전하게 다루세요</p>
+            <table class="tbl" style="margin-top:24px;">
+                <tr>
+                    <th>도구</th>
+                    <th>용도</th>
+                    <th>데이터 저장</th>
+                    <th>데이터 입력</th>
+                </tr>
+                <tr>
+                    <td><strong>MISO</strong><br><span style="font-size:11px; color:var(--g500);">사내 AI 플랫폼</span></td>
+                    <td>AI 자동화 · 업무 지원<br><span style="font-size:11px; color:var(--g500);">질의응답, 문서 분석, 워크플로우</span></td>
+                    <td>지식 저장소에 보관 가능<br><span style="font-size:11px; color:var(--g500);">보안 데이터 업로드 허용</span></td>
+                    <td>사내 문서 · 기밀 데이터 입력 가능<br><span style="font-size:11px; color:var(--g500);">회사 차원 중앙 관리 · 접근 통제</span></td>
+                </tr>
+                <tr>
+                    <td><strong>v0</strong><br><span style="font-size:11px; color:var(--g500);">AI 앱 빌더 (Vercel)</span></td>
+                    <td>앱 · 웹페이지 제작<br><span style="font-size:11px; color:var(--g500);">비개발자도 쉽게 앱 생성</span></td>
+                    <td>코드는 Vercel 클라우드에 저장<br><span style="font-size:11px; color:var(--g500);">DB 필요 시 Supabase 자동 연결<br>사내 데이터 업로드 시 소속사 보안 규정 확인</span></td>
+                    <td>전용 요금제 도입<br><span style="font-size:11px; color:var(--g500);">입력 데이터 모델 학습에 미사용 · 통합 계정 관리</span></td>
+                </tr>
+                <tr>
+                    <td><strong>AI 코딩 도구 (유료)</strong><br><span style="font-size:11px; color:var(--g500);">Claude Code, Cursor 등</span></td>
+                    <td>코드 개발 · 디버깅<br><span style="font-size:11px; color:var(--g500);">개발자 전용, 고급 기능</span></td>
+                    <td>코드는 내 PC에 저장<br><span style="font-size:11px; color:var(--g500);">개인이 직접 관리</span></td>
+                    <td>유료 플랜은 코드 학습에 미사용<br><span style="font-size:11px; color:var(--g500);">개인 구독 기반으로 중앙 관리 어려움</span></td>
+                </tr>
+                <tr>
+                    <td><strong>외부 AI 웹서비스 (무료)</strong><br><span style="font-size:11px; color:var(--g500);">ChatGPT 무료, Gemini 등</span></td>
+                    <td>범용 질의응답<br><span style="font-size:11px; color:var(--g500);">일반 정보 검색, 번역 등</span></td>
+                    <td>입력 내용이 외부 서버에 전송·저장<br><span style="font-size:11px; color:var(--g500);">브라우저에서 대화하면 서버에 기록이 남음</span></td>
+                    <td>사내 데이터 입력 금지<br><span style="font-size:11px; color:var(--g500);">AI 학습에 사용될 수 있음 · 관리 불가</span></td>
+                </tr>
+            </table>
+            <div style="background:var(--primary-light); border-radius:var(--radius-sm); padding:14px 24px; margin-top:16px; font-size:13px; color:var(--primary-dark);">
+                <strong>핵심:</strong> 일반적인 코딩 질문은 어디서든 OK &nbsp;|&nbsp; 사내 기밀 데이터는 사내 정책상 <strong>MISO</strong>에서만 허용
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 17: Supabase 소개 ===== -->
+    <!-- ===== SLIDE 17: 실습 - 개요 ===== -->
+    <div class="slide bg-practice" data-index="12">
+        <div class="slide-inner">
+            <div class="slide-badge" style="background:rgba(255,255,255,0.15);">Hands-on Lab</div>
+            <h2>&#127918; 재밌는 게임을 만들어 볼까?</h2>
+            <p class="subtitle">AI와 함께라면 게임도 뚝딱 — 직접 만들고 바로 플레이해봅시다 (v0 위주)</p>
+            <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-top:20px;">
+                <div class="practice-step" style="padding:14px;">
+                    <h4 style="font-size:14px;">Part 1: 환경 준비</h4>
+                    <p style="font-size:12px;">GitHub, v0, Supabase 가입</p>
+                </div>
+                <div class="practice-step" style="padding:14px;">
+                    <h4 style="font-size:14px;">Part 2: 게임 만들기</h4>
+                    <p style="font-size:12px;">v0에 PRD를 넣어서 게임 만들기</p>
+                </div>
+                <div class="practice-step" style="padding:14px;">
+                    <h4 style="font-size:14px;">Part 3: Supabase 저장</h4>
+                    <p style="font-size:12px;">v0에서 Supabase 연결<br>점수 저장 + 랭킹 보드</p>
+                </div>
+                <div class="practice-step" style="padding:14px;">
+                    <h4 style="font-size:14px;">Part 4: 서로 플레이!</h4>
+                    <p style="font-size:12px;">v0에서 배포 → 주소 공유</p>
+                </div>
+                <div class="practice-step" style="padding:14px;">
+                    <h4 style="font-size:14px;">Part 5: MISO AI 연결</h4>
+                    <p style="font-size:12px;">플레이 기록을 MISO에 보내<br>AI 피드백 받기</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 21: 실습 Part 1 - 설치 ===== -->
+    <div class="slide bg-practice" data-index="13">
+        <div class="slide-inner">
+            <div class="slide-badge" style="background:rgba(255,255,255,0.15);">Part 1</div>
+            <h2>환경 준비</h2>
+            <p class="subtitle">설치 없이 웹 브라우저만 있으면 됩니다 — 가입만 하면 준비 끝!</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:20px;">
+                <div class="practice-step" style="display:flex; flex-direction:column; justify-content:center;">
+                    <h4>Step 1: GitHub 가입</h4>
+                    <ol>
+                        <li><a href="https://github.com" target="_blank" style="color:#A5D8FF;"><strong>github.com</strong></a> 접속</li>
+                        <li>"Sign up" → <strong>Google 계정</strong>으로 가입</li>
+                        <li>v0, Supabase 모두 GitHub 계정으로 로그인</li>
+                    </ol>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column; justify-content:center;">
+                    <h4>Step 2: v0 접속</h4>
+                    <ol>
+                        <li><a href="https://v0.dev" target="_blank" style="color:#A5D8FF;"><strong>v0.dev</strong></a> 접속</li>
+                        <li><strong>GitHub 계정</strong>으로 로그인</li>
+                        <li>AI에게 말하면 앱을 만들어주는 도구</li>
+                    </ol>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column; justify-content:center;">
+                    <h4>Step 3: Supabase 가입</h4>
+                    <ol>
+                        <li><a href="https://supabase.com" target="_blank" style="color:#A5D8FF;"><strong>supabase.com</strong></a> 접속</li>
+                        <li>"Start your project" → <strong>GitHub 계정</strong>으로 가입</li>
+                        <li>게임 기록 등 데이터 저장에 사용</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 22: 실습 Part 2 - 웹 게임 만들기 ===== -->
+    <div class="slide bg-practice" data-index="14">
+        <div class="slide-inner">
+            <div class="slide-badge" style="background:rgba(255,255,255,0.15);">Part 2</div>
+            <h2>&#127918; 웹 게임 만들기</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 1: PRD 만들기</h4>
+                    <p style="margin-bottom:8px;">먼저 GPT나 Gemini에게 게임 기획서를 만들어달라고 요청</p>
+                    <div class="code" style="flex:1; display:flex; flex-direction:column; justify-content:center; font-size:12px;">
+                        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+                        <span class="p">&gt;</span> <span class="s">v0에서 웹 게임을 만들려고 해.<br>  1984 스타일 세로 스크롤 비행기 슈팅 게임이야.<br>  적기가 위에서 내려오고 총알로 쏴서 점수를 올리는 거야.<br>  PRD를 마크다운으로 정리해서 작성해줘.</span>
+                    </div>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 2: PRD 확인 후 게임 만들기</h4>
+                    <p style="margin-bottom:8px;">PRD 확인 후 v0에게 게임 생성 요청</p>
+                    <div class="code" style="flex:1; display:flex; flex-direction:column; justify-content:center; font-size:12px;">
+                        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+                        <span class="p">&gt;</span> <span class="s">좋아, 이 PRD대로 게임을 만들어줘.<br>  모든 UI는 한글로 만들어줘.</span>
+                    </div>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 3: 결과 확인 &amp; 플레이</h4>
+                    <ol>
+                        <li>v0가 게임을 자동 생성</li>
+                        <li>미리보기에서 직접 플레이!</li>
+                        <li>재미있게 작동하는지 확인</li>
+                    </ol>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 4: 업그레이드 요청</h4>
+                    <div class="code" style="font-size:12px;">
+                        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+                        <span class="p">&gt;</span> <span class="s">Supabase에 연결해서 플레이어 이름 입력,<br>  점수 기록, 시도 횟수 표시 기능 추가해줘.<br>  모든 UI는 한글로 만들어줘.</span>
+                        <br><span class="c">-- v0가 Supabase 연결 화면을 띄워줍니다</span>
+                        <br><span class="c">-- Free Plan 선택 → Continue 클릭!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 23: 실습 Part 3 - Supabase 연동 ===== -->
+    <div class="slide bg-practice" data-index="15">
+        <div class="slide-inner">
+            <div class="slide-badge" style="background:rgba(255,255,255,0.15);">Part 3</div>
+            <h2>&#128190; Supabase 확인 &amp; 랭킹 보드</h2>
+            <p class="subtitle" style="color:rgba(255,255,255,0.7);">Part 2에서 v0가 Supabase를 자동 연결했습니다 — 이제 확인하고 랭킹을 만들어봅시다</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:20px;">
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 1: Supabase 대시보드 확인</h4>
+                    <p style="margin-bottom:8px;">v0가 자동 생성한 프로젝트와 테이블 확인</p>
+                    <ol style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                        <li><a href="https://supabase.com" target="_blank" style="color:var(--primary-light);">supabase.com</a> → 로그인</li>
+                        <li>자동 생성된 프로젝트 확인</li>
+                        <li><strong>Table Editor</strong>에서 테이블 확인</li>
+                    </ol>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 2: 저장 테스트</h4>
+                    <p style="margin-bottom:8px;">게임을 플레이하고 데이터가 저장되는지 확인</p>
+                    <ol style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                        <li>v0 미리보기에서 게임 플레이</li>
+                        <li>이름 입력 → 점수 기록</li>
+                        <li>Supabase Table Editor에서<br>데이터가 들어왔는지 확인</li>
+                    </ol>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 3: 랭킹 보드 만들기</h4>
+                    <p style="margin-bottom:8px;">랭킹 보드가 없다면 추가 요청</p>
+                    <div class="code" style="flex:1; display:flex; flex-direction:column; justify-content:center; font-size:12px;">
+                        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+                        <span class="p">&gt;</span> <span class="s">Supabase에 목업 데이터를 먼저 넣고,<br>  점수 높은 순으로 가져와서<br>  랭킹 보드를 보여줘.<br>  상위 10명까지 표시해줘.<br>  모든 UI는 한글로 만들어줘.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 24: 실습 Part 4 - 서로 플레이 ===== -->
+    <div class="slide bg-practice" data-index="16">
+        <div class="slide-inner">
+            <div class="slide-badge" style="background:rgba(255,255,255,0.15);">Part 4</div>
+            <h2>&#127942; 서로 플레이!</h2>
+            <p class="subtitle">만든 게임을 배포하고, 주소를 공유해서 같이 즐겨봅시다</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:20px;">
+                <div class="practice-step" style="display:flex; flex-direction:column;">
+                    <h4>Step 1: v0에서 배포하기</h4>
+                    <p style="margin-bottom:8px; font-size:12px;"><span style="color:var(--g500);">v0는 만든 앱을 바로 웹에 배포할 수 있습니다</span></p>
+                    <ol style="font-size:12px;">
+                        <li>v0 우측 상단 <strong>Deploy</strong> 클릭</li>
+                        <li>배포 완료! 주소가 자동 생성됩니다</li>
+                    </ol>
+                    <div style="background:rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center; margin-top:auto;">
+                        <p style="font-size:11px; color:#8B95A1;">내 게임 주소 예시</p>
+                        <p style="font-size:13px; color:#A5D8FF; margin-top:4px;">https://shooting-game-xxx.vercel.app</p>
+                    </div>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column; justify-content:center;">
+                    <div style="font-size:36px; margin-bottom:10px; text-align:center;">&#127918;</div>
+                    <h4 style="text-align:center;">서로의 게임 플레이</h4>
+                    <p style="margin-top:8px; text-align:center;">배포 주소를 옆 사람에게 공유해서<br>게임을 플레이하고 점수를 남겨보세요</p>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column; justify-content:center;">
+                    <div style="font-size:36px; margin-bottom:10px; text-align:center;">&#127942;</div>
+                    <h4 style="text-align:center;">랭킹 확인</h4>
+                    <p style="margin-top:8px; text-align:center;">Supabase에 저장된 기록으로<br>누가 최고 점수인지 확인!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 25: 실습 Part 5 - MISO 연결 ===== -->
+    <div class="slide bg-practice" data-index="17">
+        <div class="slide-inner">
+            <div class="slide-badge" style="background:rgba(255,255,255,0.15);">Part 5</div>
+            <h2>&#129302; 한 걸음 더 — MISO AI 연결하기</h2>
+            <p class="subtitle">게임 플레이 데이터를 MISO에 보내서 AI 피드백을 받아보자</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                <div class="practice-step" style="display:flex; flex-direction:column; padding:12px 14px;">
+                    <h4 style="font-size:14px; margin-bottom:6px;">Step 1: MISO에서 흐름 만들기</h4>
+                    <p style="margin-bottom:6px; font-size:12px;">miso.run → 새 흐름 생성 → 아래 프롬프트 설정 → <strong>발행하기</strong> → API Key, URL 복사<br><span style="font-size:11px; color:var(--g500);">⚠️ MAX 토큰 넉넉하게 설정 / 발행하기 필수!</span></p>
+                    <div class="code" style="flex:1; display:flex; flex-direction:column; justify-content:center; font-size:11px; padding:10px 12px;">
+                        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+                        <span class="c">-- MISO 시스템 프롬프트 (흐름에 붙여넣기)</span><br>
+                        <span class="s">너는 슈팅 게임 "SKY FORCE 1984"의 AI 코치야.<br>플레이어의 게임 기록을 분석해서 피드백을 줘.<br><br>응답 규칙: 한국어, 존댓말, 이모지 사용, 300자 이내<br><br>응답 형식:<br>🎖️ 이번 비행 평가 (한 줄 총평)<br>✅ 잘한 점 (2~3개)<br>💡 다음 비행 팁 (2~3개)<br>🔥 도전 목표 (1개)</span>
+                    </div>
+                </div>
+                <div class="practice-step" style="display:flex; flex-direction:column; padding:12px 14px;">
+                    <h4 style="font-size:14px; margin-bottom:6px;">Step 2: v0에 한번에 붙여넣기</h4>
+                    <p style="margin-bottom:6px; font-size:12px;">아래 내용을 통째로 복사해서 v0에 붙여넣기<br><span style="font-size:11px; color:var(--g500);">붙여넣기 후 v0 Settings → Environment Variables에 MISO_API_KEY, MISO_API_URL 추가</span></p>
+                    <div class="code" style="flex:1; display:flex; flex-direction:column; justify-content:center; font-size:10px; padding:10px 12px; line-height:1.5;">
+                        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+                        <span class="s">게임 중 플레이어 행동(이동, 발사, 처치, 피격)을 임시 기록하고,<br>게임 종료 시 MISO API로 보내서 AI 코치 피드백을 결과 화면에 보여줘.<br>모든 UI는 한글로 만들어줘.<br><br>MISO API 연결 참조:<br>- Endpoint: POST {MISO_API_URL}/chat<br>- Headers:<br>  Authorization: Bearer {MISO_API_KEY}<br>  Content-Type: application/json<br>- Body:<br>  {<br>    "inputs": {},<br>    "query": "플레이 기록 텍스트",<br>    "mode": "blocking",<br>    "conversation_id": "",<br>    "user": "player"<br>  }<br>- 응답에서 data.answer가 AI 피드백 텍스트<br><br>환경 변수 (서버 사이드에서 사용):<br>- MISO_API_KEY=발행 후 복사한 키<br>- MISO_API_URL=https://api.holdings.miso.gs/ext/v1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SLIDE 21: 마무리 ===== -->
+    <div class="slide bg-hero" data-index="18">
+        <div class="slide-inner">
+            <div style="display:flex; align-items:center; gap:40px; position:relative; z-index:1;">
+                <div style="flex:1;">
+                    <img src="https://gsholdings.notion.site/image/attachment%3Aedea1bdf-7546-42c3-8b70-79cff0c8df5b%3A%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2026-02-12_130022.png?table=block&id=305f800b-d1c1-8001-acd3-f4157a401494&spaceId=53748a20-5c6b-469c-aeea-2e4a149774c7&width=1230&userId=&cache=v2" alt="AI 답변 예시" style="width:100%; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                </div>
+                <div style="flex:1; text-align:center;">
+                    <h1 style="font-size:48px; font-weight:900; margin-bottom:24px;">수고하셨습니다.</h1>
+                    <p style="font-size:20px; color:rgba(255,255,255,0.7);">
+                        다음 교육은 두 달 뒤에 만나요!<br>
+                        <span style="font-size:16px; margin-top:8px; display:inline-block;">지속적으로 함께 성장하는 자리를 만들어가겠습니다.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Navigation Controls -->
+<div class="controls">
+    <button id="btnToc" onclick="toggleToc()" title="목차">&#9776;</button>
+    <button id="btnPrev" onclick="prevSlide()" title="이전 (←)">&#9664;</button>
+    <span class="page-info" id="pageInfo">1 / 19</span>
+    <button id="btnNext" onclick="nextSlide()" title="다음 (→)">&#9654;</button>
+    <button id="btnFull" onclick="toggleFullscreen()" title="전체화면 (F)">&#9974;</button>
+    <span style="width:1px;height:20px;background:rgba(255,255,255,0.2);"></span>
+    <button id="btnPresenter" onclick="togglePresenter()" title="발표자 모드 (N)" style="font-size:16px;">&#128221;</button>
+    <button onclick="window.print()" title="인쇄 (Ctrl+P)" style="font-size:16px;">&#128424;</button>
+</div>
+
+<!-- TOC Overlay -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeToc(event)">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>&#128214; 목차</h3>
+        <div class="toc-item" onclick="goToSlide(0)" style="color:var(--g500);font-size:13px;margin-bottom:4px;">타이틀 / 교육 순서<span style="margin-left:auto;font-size:12px;">p.1~2</span></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 32px;">
+            <div class="toc-item" onclick="goToSlide(2)"><span style="font-weight:800;color:var(--primary);margin-right:10px;">1</span>AI 도구, 어떤 것들이 있나<span style="margin-left:auto;font-size:12px;color:var(--g500);">p.3</span></div>
+            <div class="toc-item" onclick="goToSlide(3)"><span style="font-weight:800;color:var(--primary);margin-right:10px;">2</span>이런 것들을 만들 수 있다<span style="margin-left:auto;font-size:12px;color:var(--g500);">p.4~7</span></div>
+            <div class="toc-item" onclick="goToSlide(7)"><span style="font-weight:800;color:var(--primary);margin-right:10px;">3</span>앱에 AI 연결 &amp; MISO<span style="margin-left:auto;font-size:12px;color:var(--g500);">p.8~9</span></div>
+            <div class="toc-item" onclick="goToSlide(9)"><span style="font-weight:800;color:var(--g700);margin-right:10px;">4</span>만든 앱, 어디에 올리나<span style="margin-left:auto;font-size:12px;color:var(--g500);">p.10</span></div>
+            <div class="toc-item" onclick="goToSlide(10)"><span style="font-weight:800;color:var(--g700);margin-right:10px;">5</span>보안, 이것만 기억하세요<span style="margin-left:auto;font-size:12px;color:var(--g500);">p.11~12</span></div>
+            <div class="toc-item" onclick="goToSlide(12)"><span style="font-weight:800;color:var(--g700);margin-right:10px;">6</span>실습 — 게임 만들기<span style="margin-left:auto;font-size:12px;color:var(--g500);">p.13~18</span></div>
+            <div class="toc-item" onclick="goToSlide(18)" style="color:var(--g500);font-size:13px;">마무리<span style="margin-left:auto;font-size:12px;">p.19</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Presenter Panel -->
+<div class="presenter-panel" id="presenterPanel">
+    <div class="pp-header">
+        <span>&#128221; 발표자 노트</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span id="ppSlideNum">1 / 19</span>
+            <button onclick="openPresentationWindow()" class="pp-btn" title="별도 창으로 발표 (청중용)">&#128250; 발표 창</button>
+        </div>
+    </div>
+    <div class="pp-timer">
+        <span id="timerDisplay">00:00:00</span>
+        <button onclick="toggleTimer()" id="timerBtn">시작</button>
+        <button onclick="resetTimer()">초기화</button>
+    </div>
+    <div class="pp-notes" id="ppNotes" contenteditable="true" spellcheck="false">발표자 노트가 여기에 표시됩니다.</div>
+    <div class="pp-footer">
+        <div class="pp-next">
+            다음: <span id="ppNextTitle">-</span>
+        </div>
+        <div class="pp-note-actions">
+            <button onclick="saveNotesToFile()" class="pp-btn pp-btn-save" title="모든 노트를 JSON 파일로 저장">&#128190; 파일 저장</button>
+            <button onclick="loadNotesFromFile()" class="pp-btn" title="저장한 노트 파일 불러오기">&#128194; 불러오기</button>
+            <input type="file" id="noteFileInput" accept=".json" style="display:none;">
+            <button onclick="resetCurrentNote()" class="pp-btn" title="현재 슬라이드를 기본 노트로 복원">&#8634; 복원</button>
+            <span id="ppSaveStatus" style="font-size:11px;color:#51CF66;opacity:0;transition:opacity 0.3s;">저장됨</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== Copy Button ==========
+    function copyCode(btn) {
+        const codeBlock = btn.parentElement;
+        const text = codeBlock.innerText.replace('복사', '').replace('복사됨!', '').replace(/^>\s*/gm, '').trim();
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = '복사됨!';
+            setTimeout(() => { btn.textContent = '복사'; }, 1500);
+        });
+    }
+
+    // ========== Mode Detection ==========
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAudienceMode = urlParams.get('mode') === 'audience';
+
+    // ========== Core State ==========
+    let currentSlide = parseInt(sessionStorage.getItem('currentSlide') || '0');
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    if (currentSlide >= totalSlides) currentSlide = 0;
+    let isPresenterMode = false;
+    let presentationWindow = null;
+    let lastSavedSlide = -1;
+
+    // ========== BroadcastChannel (발표자↔청중 창 동기화) ==========
+    const channel = new BroadcastChannel('ai-edu-sync');
+
+    // ========== Slide Titles ==========
+    const slideTitles = [
+        '타이틀', '교육 순서', '도구 소개', '이런 것들을 만들 수 있다',
+        '어떻게 만드나?', '이렇게 수정합니다', '더 복잡한 기능이 필요할 때',
+        '만든 앱에 AI 연결', 'AI 자동화 흐름 (MISO)',
+        '코드와 데이터 저장', '보안 가이드', '데이터 보안 비교',
+        '실습 개요', 'Part 1: 환경 준비', 'Part 2: 웹 게임 만들기',
+        'Part 3: Supabase 저장', 'Part 4: 서로 플레이!', 'Part 5: MISO AI 연결',
+        '마무리'
+    ];
+
+    // ========== Default Presenter Notes ==========
+    const defaultNotes = {};
+
+    // ========== Notes Persistence (파일 기반) ==========
+    let editedNotes = {};
+    const NOTES_KEY = 'ai_edu_presenter_notes';
+
+    function loadSavedNotes() {
+        // defaultNotes가 비어있으면 저장된 노트도 초기화
+        if (Object.keys(defaultNotes).length === 0) {
+            localStorage.removeItem(NOTES_KEY);
+            editedNotes = {};
+            return;
+        }
+        try {
+            const saved = localStorage.getItem(NOTES_KEY);
+            if (saved) editedNotes = JSON.parse(saved);
+        } catch(e) { editedNotes = {}; }
+    }
+
+    function saveNotesToCache() {
+        try { localStorage.setItem(NOTES_KEY, JSON.stringify(editedNotes)); } catch(e) {}
+    }
+
+    function getNoteForSlide(idx) {
+        if (editedNotes[idx] !== undefined) return editedNotes[idx];
+        return defaultNotes[idx] || '';
+    }
+
+    // 현재 노트 내용을 메모리에 캡처
+    function captureCurrentNote() {
+        const el = document.getElementById('ppNotes');
+        if (!el || lastSavedSlide < 0) return;
+        const text = el.innerText;
+        const def = defaultNotes[lastSavedSlide] || '';
+        if (text !== def) {
+            editedNotes[lastSavedSlide] = text;
+        } else {
+            delete editedNotes[lastSavedSlide];
+        }
+    }
+
+    // ========== File System Access API로 같은 위치에 저장 ==========
+    let noteFileHandle = null; // 한번 지정하면 이후 자동 저장
+
+    function buildNotesJSON() {
+        captureCurrentNote();
+        saveNotesToCache();
+        const allNotes = {};
+        for (let i = 0; i < totalSlides; i++) {
+            allNotes[i] = getNoteForSlide(i);
+        }
+        return JSON.stringify({
+            title: 'AI 도구 활용 교육 - 발표자 노트',
+            savedAt: new Date().toLocaleString('ko-KR'),
+            notes: allNotes
+        }, null, 2);
+    }
+
+    async function saveNotesToFile() {
+        const content = buildNotesJSON();
+        try {
+            // File System Access API (Chrome / Edge)
+            if (window.showSaveFilePicker) {
+                if (!noteFileHandle) {
+                    // 처음: 저장 위치 선택 (HTML과 같은 폴더 선택)
+                    noteFileHandle = await window.showSaveFilePicker({
+                        suggestedName: 'AI도구활용교육_발표노트.json',
+                        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+                    });
+                }
+                // 이후: 같은 파일에 바로 덮어쓰기 (대화상자 없음)
+                const writable = await noteFileHandle.createWritable();
+                await writable.write(content);
+                await writable.close();
+                showSaveStatus('저장 완료 ✓');
+                return;
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') return; // 사용자가 취소
+            noteFileHandle = null; // 오류 시 핸들 초기화
+        }
+        // 폴백: 다운로드 방식
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'AI도구활용교육_발표노트.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showSaveStatus('다운로드됨');
+    }
+
+    // 다른 이름으로 저장 (핸들 초기화 후 재선택)
+    async function saveNotesAs() {
+        noteFileHandle = null;
+        await saveNotesToFile();
+    }
+
+    // JSON 파일에서 불러오기
+    async function loadNotesFromFile(e) {
+        let file = null;
+        if (e && e.target && e.target.files) {
+            file = e.target.files[0];
+            e.target.value = '';
+        }
+        // File System Access API 우선
+        if (!file && window.showOpenFilePicker) {
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+                });
+                file = await handle.getFile();
+                noteFileHandle = handle; // 이 파일 핸들을 저장용으로도 재활용
+            } catch (err) { return; }
+        }
+        // 폴백: 구형 브라우저용 file input
+        if (!file) {
+            const inp = document.getElementById('noteFileInput');
+            inp.onchange = (ev) => { loadNotesFromFile(ev); inp.onchange = null; };
+            inp.click();
+            return;
+        }
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const notes = data.notes || data;
+            editedNotes = {};
+            for (const [k, v] of Object.entries(notes)) {
+                const idx = parseInt(k);
+                const def = defaultNotes[idx] || '';
+                if (v && v !== def) editedNotes[idx] = v;
+            }
+            saveNotesToCache();
+            updatePresenterPanel();
+            showSaveStatus('불러오기 완료 ✓');
+        } catch(err) {
+            alert('노트 파일을 읽을 수 없습니다.');
+        }
+    }
+
+    function showSaveStatus(msg) {
+        const st = document.getElementById('ppSaveStatus');
+        if (st) {
+            st.textContent = msg;
+            st.style.opacity = '1';
+            setTimeout(() => st.style.opacity = '0', 2000);
+        }
+    }
+
+    function resetCurrentNote() {
+        delete editedNotes[currentSlide];
+        saveNotesToCache();
+        updatePresenterPanel();
+    }
+
+    loadSavedNotes();
+
+    // ========== Audience Mode (청중 창) ==========
+    if (isAudienceMode) {
+        // 컨트롤, 프로그레스바, 프리젠터 패널, 레이저, TOC 전부 숨기기
+        document.querySelector('.controls').style.display = 'none';
+        document.getElementById('progressBar').style.display = 'none';
+        const pp = document.getElementById('presenterPanel');
+        if (pp) pp.style.display = 'none';
+        const toc = document.getElementById('tocOverlay');
+        if (toc) toc.style.display = 'none';
+
+        // 청중 창: 슬라이드 동기화 수신
+        channel.onmessage = (e) => {
+            if (e.data.type === 'slide') {
+                currentSlide = e.data.index;
+                slides.forEach((s, i) => {
+                    s.classList.remove('active', 'prev');
+                    if (i === currentSlide) s.classList.add('active');
+                    else if (i < currentSlide) s.classList.add('prev');
+                });
+            }
+        };
+
+        // 클릭하면 전체화면 시도
+        document.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        }, { once: true });
+
+        // 초기 슬라이드 표시
+        slides.forEach((s, i) => {
+            s.classList.remove('active', 'prev');
+            if (i === currentSlide) s.classList.add('active');
+            else if (i < currentSlide) s.classList.add('prev');
+        });
+
+        // 청중 모드에서는 나머지 코드 실행 안 함
+    }
+
+    if (!isAudienceMode) {
+
+    // 초기 슬라이드 복원 (새로고침 시)
+    slides.forEach((s, i) => {
+        s.classList.remove('active', 'prev');
+        if (i === currentSlide) s.classList.add('active');
+        else if (i < currentSlide) s.classList.add('prev');
+    });
+    document.getElementById('pageInfo').textContent = `${currentSlide + 1} / ${totalSlides}`;
+    document.getElementById('progressBar').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+
+    // ========== Slide Update ==========
+    function updateSlide() {
+        // 슬라이드 변경 전 현재 노트 자동 캡처
+        if (isPresenterMode && lastSavedSlide >= 0 && lastSavedSlide !== currentSlide) {
+            captureCurrentNote();
+            saveNotesToCache();
+        }
+        lastSavedSlide = currentSlide;
+
+        slides.forEach((s, i) => {
+            s.classList.remove('active', 'prev');
+            if (i === currentSlide) s.classList.add('active');
+            else if (i < currentSlide) s.classList.add('prev');
+        });
+
+        document.getElementById('pageInfo').textContent = `${currentSlide + 1} / ${totalSlides}`;
+        document.getElementById('btnPrev').disabled = currentSlide === 0;
+        document.getElementById('btnNext').disabled = currentSlide === totalSlides - 1;
+        document.getElementById('progressBar').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+        sessionStorage.setItem('currentSlide', currentSlide);
+
+        updatePresenterPanel();
+
+        // 청중 창에 동기화
+        channel.postMessage({ type: 'slide', index: currentSlide });
+    }
+
+    function updatePresenterPanel() {
+        document.getElementById('ppSlideNum').textContent = `${currentSlide + 1} / ${totalSlides}`;
+        // 노트 로드 (편집된 것 우선, 없으면 기본)
+        document.getElementById('ppNotes').innerText = getNoteForSlide(currentSlide);
+        lastSavedSlide = currentSlide;
+        const nextIdx = currentSlide + 1;
+        document.getElementById('ppNextTitle').textContent =
+            nextIdx < totalSlides ? slideTitles[nextIdx] : '(마지막 슬라이드)';
+    }
+
+    function nextSlide() {
+        if (currentSlide < totalSlides - 1) { currentSlide++; updateSlide(); }
+    }
+    function prevSlide() {
+        if (currentSlide > 0) { currentSlide--; updateSlide(); }
+    }
+    function goToSlide(index) {
+        currentSlide = index;
+        updateSlide();
+        closeTocDirect();
+    }
+
+    // ========== TOC ==========
+    function toggleToc() {
+        document.getElementById('tocOverlay').classList.toggle('show');
+    }
+    function closeToc(e) {
+        if (e.target === document.getElementById('tocOverlay')) closeTocDirect();
+    }
+    function closeTocDirect() {
+        document.getElementById('tocOverlay').classList.remove('show');
+    }
+
+    // ========== Fullscreen (현재 창) ==========
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // ========== 별도 창 발표 (청중용) ==========
+    function openPresentationWindow() {
+        // 이미 열려있으면 포커스
+        if (presentationWindow && !presentationWindow.closed) {
+            presentationWindow.focus();
+            return;
+        }
+        // 현재 파일 URL + ?mode=audience 로 새 창 열기
+        const url = window.location.pathname + '?mode=audience';
+        presentationWindow = window.open(url, 'presentation',
+            'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
+        // 초기 슬라이드 동기화 (약간 딜레이 후)
+        setTimeout(() => {
+            channel.postMessage({ type: 'slide', index: currentSlide });
+        }, 1000);
+    }
+
+    // 창 닫힘 감지
+    window.addEventListener('beforeunload', () => {
+        // 노트 자동 저장
+        captureCurrentNote();
+        saveNotesToCache();
+    });
+
+    // ========== Presenter Mode ==========
+    function togglePresenter() {
+        isPresenterMode = !isPresenterMode;
+        document.body.classList.toggle('presenter-mode', isPresenterMode);
+        document.getElementById('btnPresenter').style.background =
+            isPresenterMode ? 'rgba(255,255,255,0.25)' : '';
+        if (isPresenterMode) {
+            updatePresenterScale();
+            updatePresenterPanel();
+        }
+    }
+
+    function updatePresenterScale() {
+        const panel = document.getElementById('presenterPanel');
+        const panelW = panel ? panel.offsetWidth : window.innerWidth * 0.24;
+        const gap = 30; // left margin + gap between slide and panel
+        const availW = window.innerWidth - panelW - gap;
+        const availH = window.innerHeight - 70; // top margin + controls bar
+        const scaleX = availW / window.innerWidth;
+        const scaleY = availH / window.innerHeight;
+        const scale = Math.min(scaleX, scaleY);
+        document.body.style.setProperty('--ps', scale);
+    }
+
+    window.addEventListener('resize', () => {
+        if (isPresenterMode) updatePresenterScale();
+    });
+
+    // ========== Mouse Wheel Navigation (발표 슬라이드 위에서 휠로 페이지 이동) ==========
+    let wheelCooldown = false;
+    document.getElementById('slidesWrapper').addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (wheelCooldown) return;
+        wheelCooldown = true;
+        setTimeout(() => wheelCooldown = false, 400);
+        if (e.deltaY > 0) nextSlide();
+        else if (e.deltaY < 0) prevSlide();
+    }, { passive: false });
+
+    // ========== Timer ==========
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let timerRunning = false;
+
+    function toggleTimer() {
+        timerRunning = !timerRunning;
+        document.getElementById('timerBtn').textContent = timerRunning ? '정지' : '시작';
+        if (timerRunning) {
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        } else {
+            clearInterval(timerInterval);
+        }
+    }
+
+    function resetTimer() {
+        timerRunning = false;
+        clearInterval(timerInterval);
+        timerSeconds = 0;
+        document.getElementById('timerBtn').textContent = '시작';
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const h = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
+        const s = String(timerSeconds % 60).padStart(2, '0');
+        document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+    }
+
+    // ========== Keyboard Navigation ==========
+    document.addEventListener('keydown', (e) => {
+        // 노트 편집 중이면 슬라이드 네비게이션 단축키 비활성화
+        const notesEl = document.getElementById('ppNotes');
+        const isEditingNotes = document.activeElement === notesEl;
+
+        if (document.getElementById('tocOverlay').classList.contains('show')) {
+            if (e.key === 'Escape') closeTocDirect();
+            return;
+        }
+
+        // 노트 편집 중에는 Escape만 처리 (포커스 해제)
+        if (isEditingNotes) {
+            if (e.key === 'Escape') { notesEl.blur(); e.preventDefault(); }
+            return;
+        }
+
+        switch(e.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+            case ' ':
+            case 'PageDown':
+                e.preventDefault();
+                nextSlide();
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+            case 'PageUp':
+                e.preventDefault();
+                prevSlide();
+                break;
+            case 'Home':
+                e.preventDefault();
+                goToSlide(0);
+                break;
+            case 'End':
+                e.preventDefault();
+                goToSlide(totalSlides - 1);
+                break;
+            case 'f':
+            case 'F':
+                toggleFullscreen();
+                break;
+            case 'n':
+            case 'N':
+                togglePresenter();
+                break;
+            case 'p':
+            case 'P':
+                openPresentationWindow();
+                break;
+            case 'Escape':
+                if (document.fullscreenElement) document.exitFullscreen();
+                break;
+        }
+    });
+
+    // ========== Touch Support ==========
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    document.addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].screenX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) nextSlide();
+            else prevSlide();
+        }
+    });
+
+    // ========== Init ==========
+    updateSlide();
+
+    } // end if (!isAudienceMode)
+</script>
+
+</body>
+</html>
